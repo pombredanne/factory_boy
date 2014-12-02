@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2010 Mark Sandstrom
 # Copyright (c) 2011-2013 Raphaël Barrois
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,21 +20,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-"""Helper to test circular factory dependencies."""
 
-import factory
-
-from . import bar as bar_mod
-
-class Foo(object):
-    def __init__(self, bar, x):
-        self.bar = bar
-        self.x = x
+import functools
+import warnings
 
 
-class FooFactory(factory.Factory):
-    class Meta:
-        model = Foo
+def disable_warnings(fun):
+    @functools.wraps(fun)
+    def decorated(*args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            return fun(*args, **kwargs)
+    return decorated
 
-    x = 42
-    bar = factory.SubFactory(bar_mod.BarFactory)
+

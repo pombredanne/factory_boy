@@ -7,7 +7,10 @@ Here are some real-world examples of using FactoryBoy.
 Objects
 -------
 
-First, let's define a couple of objects::
+First, let's define a couple of objects:
+
+
+.. code-block:: python
 
     class Account(object):
         def __init__(self, username, email):
@@ -41,7 +44,10 @@ First, let's define a couple of objects::
 Factories
 ---------
 
-And now, we'll define the related factories::
+And now, we'll define the related factories:
+
+
+.. code-block:: python
 
     import factory
     import random
@@ -50,25 +56,30 @@ And now, we'll define the related factories::
 
 
     class AccountFactory(factory.Factory):
-        FACTORY_FOR = objects.Account
+        class Meta:
+            model = objects.Account
 
         username = factory.Sequence(lambda n: 'john%s' % n)
         email = factory.LazyAttribute(lambda o: '%s@example.org' % o.username)
 
 
     class ProfileFactory(factory.Factory):
-        FACTORY_FOR = objects.Profile
+        class Meta:
+            model = objects.Profile
 
         account = factory.SubFactory(AccountFactory)
-        gender = random.choice([objects.Profile.GENDER_MALE, objects.Profile.GENDER_FEMALE])
+        gender = factory.Iterator([objects.Profile.GENDER_MALE, objects.Profile.GENDER_FEMALE])
         firstname = u'John'
         lastname = u'Doe'
 
 
 
-We have now defined basic factories for our :py:class:`~Account` and :py:class:`~Profile` classes.
+We have now defined basic factories for our :class:`~Account` and :class:`~Profile` classes.
 
-If we commonly use a specific variant of our objects, we can refine a factory accordingly::
+If we commonly use a specific variant of our objects, we can refine a factory accordingly:
+
+
+.. code-block:: python
 
     class FemaleProfileFactory(ProfileFactory):
         gender = objects.Profile.GENDER_FEMALE
@@ -80,7 +91,10 @@ If we commonly use a specific variant of our objects, we can refine a factory ac
 Using the factories
 -------------------
 
-We can now use our factories, for tests::
+We can now use our factories, for tests:
+
+
+.. code-block:: python
 
     import unittest
 
@@ -100,25 +114,23 @@ We can now use our factories, for tests::
         def test_get_profile_stats(self):
             profiles = []
 
-            for _ in xrange(4):
-                profiles.append(factories.ProfileFactory())
-            for _ in xrange(2):
-                profiles.append(factories.FemaleProfileFactory())
-            for _ in xrange(2):
-                profiles.append(factories.ProfileFactory(planet='Tatooine'))
+            profiles.extend(factories.ProfileFactory.create_batch(4))
+            profiles.extend(factories.FemaleProfileFactory.create_batch(2))
+            profiles.extend(factories.ProfileFactory.create_batch(2, planet="Tatooine"))
 
             stats = business_logic.profile_stats(profiles)
             self.assertEqual({'Earth': 6, 'Mars': 2}, stats.planets)
             self.assertLess(stats.genders[objects.Profile.GENDER_FEMALE], 2)
 
 
-Or for fixtures::
+Or for fixtures:
+
+.. code-block:: python
 
     from . import factories
 
     def make_objects():
-        for _ in xrange(50):
-            factories.ProfileFactory()
+        factories.ProfileFactory.create_batch(size=50)
 
         # Let's create a few, known objects.
         factories.ProfileFactory(

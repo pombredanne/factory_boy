@@ -23,17 +23,15 @@
 
 import factory
 
-from . import bar as bar_mod
-
-class Foo(object):
-    def __init__(self, bar, x):
-        self.bar = bar
-        self.x = x
+class TreeElement(object):
+    def __init__(self, name, parent):
+        self.parent = parent
+        self.name = name
 
 
-class FooFactory(factory.Factory):
+class TreeElementFactory(factory.Factory):
     class Meta:
-        model = Foo
+        model = TreeElement
 
-    x = 42
-    bar = factory.SubFactory(bar_mod.BarFactory)
+    name = factory.Sequence(lambda n: "tree%s" % n)
+    parent = factory.SubFactory('tests.cyclic.self_ref.TreeElementFactory')

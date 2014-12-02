@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2010 Mark Sandstrom
-# Copyright (c) 2011 Raphaël Barrois
+# Copyright (c) 2011-2013 Raphaël Barrois
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+from __future__ import unicode_literals
+
+import collections
 
 #: String for splitting an attribute name into a
 #: (subfactory_name, subfactory_field) tuple.
@@ -43,7 +46,8 @@ def extract_dict(prefix, kwargs, pop=True, exclude=()):
     """
     prefix = prefix + ATTR_SPLITTER
     extracted = {}
-    for key in kwargs.keys():
+
+    for key in list(kwargs):
         if key in exclude:
             continue
 
@@ -93,3 +97,47 @@ def import_object(module_name, attribute_name):
     module = __import__(module_name, {}, {}, [attribute_name], 0)
     return getattr(module, attribute_name)
 
+
+def _safe_repr(obj):
+    try:
+        obj_repr = repr(obj)
+    except UnicodeError:
+        return '<bad_repr object at %s>' % id(obj)
+
+    try:  # Convert to "text type" (= unicode)
+        return '%s' % obj_repr
+    except UnicodeError:  # non-ascii bytes repr on Py2
+        return obj_repr.decode('utf-8')
+
+
+def log_pprint(args=(), kwargs=None):
+    kwargs = kwargs or {}
+    return ', '.join(
+        [_safe_repr(arg) for arg in args] +
+        [
+            '%s=%s' % (key, _safe_repr(value))
+            for key, value in kwargs.items()
+        ]
+    )
+
+
+class ResetableIterator(object):
+    """An iterator wrapper that can be 'reset()' to its start."""
+    def __init__(self, iterator, **kwargs):
+        super(ResetableIterator, self).__init__(**kwargs)
+        self.iterator = iter(iterator)
+        self.past_elements = collections.deque()
+        self.next_elements = collections.deque()
+
+    def __iter__(self):
+        while True:
+            if self.next_elements:
+                yield self.next_elements.popleft()
+            else:
+                value = next(self.iterator)
+                self.past_elements.append(value)
+                yield value
+
+    def reset(self):
+        self.next_elements.clear()
+        self.next_elements.extend(self.past_elements)

@@ -18,22 +18,29 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+"""Settings for factory_boy/Django tests."""
 
-"""Helper to test circular factory dependencies."""
+import os
 
-import factory
+FACTORY_ROOT = os.path.join(
+    os.path.abspath(os.path.dirname(__file__)),     # /path/to/fboy/tests/djapp/
+    os.pardir,                                      # /path/to/fboy/tests/
+    os.pardir,                                      # /path/to/fboy
+)
 
-from . import bar as bar_mod
+MEDIA_ROOT = os.path.join(FACTORY_ROOT, 'tmp_test')
 
-class Foo(object):
-    def __init__(self, bar, x):
-        self.bar = bar
-        self.x = x
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+    },
+}
 
 
-class FooFactory(factory.Factory):
-    class Meta:
-        model = Foo
+INSTALLED_APPS = [
+    'tests.djapp'
+]
 
-    x = 42
-    bar = factory.SubFactory(bar_mod.BarFactory)
+MIDDLEWARE_CLASSES = ()
+
+SECRET_KEY = 'testing.'

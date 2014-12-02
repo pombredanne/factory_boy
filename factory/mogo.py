@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2010 Mark Sandstrom
 # Copyright (c) 2011-2013 Raphaël Barrois
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,21 +20,27 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-"""Helper to test circular factory dependencies."""
 
-import factory
-
-from . import bar as bar_mod
-
-class Foo(object):
-    def __init__(self, bar, x):
-        self.bar = bar
-        self.x = x
+from __future__ import unicode_literals
 
 
-class FooFactory(factory.Factory):
+"""factory_boy extensions for use with the mogo library (pymongo wrapper)."""
+
+
+from . import base
+
+
+class MogoFactory(base.Factory):
+    """Factory for mogo objects."""
     class Meta:
-        model = Foo
+        abstract = True
 
-    x = 42
-    bar = factory.SubFactory(bar_mod.BarFactory)
+    @classmethod
+    def _build(cls, model_class, *args, **kwargs):
+        return model_class.new(*args, **kwargs)
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        instance = model_class.new(*args, **kwargs)
+        instance.save()
+        return instance

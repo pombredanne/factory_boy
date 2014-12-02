@@ -26,7 +26,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath('.')))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.viewcode']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.extlinks',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.viewcode',
+]
+
+extlinks = {
+    'issue': ('https://github.com/rbarrois/factory_boy/issues/%s', 'issue #'),
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -42,7 +51,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Factory Boy'
-copyright = u'2011, Raphaël Barrois, Mark Sandstrom'
+copyright = u'2011-2013, Raphaël Barrois, Mark Sandstrom'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -231,4 +240,14 @@ man_pages = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None}
+intersphinx_mapping = {
+    'http://docs.python.org/': None,
+    'django': (
+        'http://docs.djangoproject.com/en/dev/',
+        'http://docs.djangoproject.com/en/dev/_objects/',
+    ),
+    'sqlalchemy': (
+        'http://docs.sqlalchemy.org/en/rel_0_8/',
+        'http://docs.sqlalchemy.org/en/rel_0_8/objects.inv',
+    ),
+}

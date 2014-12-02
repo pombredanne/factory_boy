@@ -19,21 +19,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-"""Helper to test circular factory dependencies."""
 
-import factory
+import os.path
 
-from . import bar as bar_mod
-
-class Foo(object):
-    def __init__(self, bar, x):
-        self.bar = bar
-        self.x = x
-
-
-class FooFactory(factory.Factory):
-    class Meta:
-        model = Foo
-
-    x = 42
-    bar = factory.SubFactory(bar_mod.BarFactory)
+TESTDATA_ROOT = os.path.abspath(os.path.dirname(__file__))
+TESTFILE_PATH = os.path.join(TESTDATA_ROOT, 'example.data')
+TESTIMAGE_PATH = os.path.join(TESTDATA_ROOT, 'example.jpeg')

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2010 Mark Sandstrom
 # Copyright (c) 2011-2013 Raphaël Barrois
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,24 +20,59 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-"""Compatibility tools for tests"""
 
+"""Compatibility tools"""
+
+import datetime
+import decimal
 import sys
 
-is_python2 = (sys.version_info[0] == 2)
+PY2 = (sys.version_info[0] == 2)
 
-if sys.version_info[0:2] < (2, 7):  # pragma: no cover
-    import unittest2 as unittest
+if PY2:  # pragma: no cover
+    def is_string(obj):
+        return isinstance(obj, (str, unicode))
+
+    from StringIO import StringIO as BytesIO
+
 else:  # pragma: no cover
-    import unittest
+    def is_string(obj):
+        return isinstance(obj, str)
 
-if sys.version_info[0] == 2:  # pragma: no cover
-    import StringIO as io
+    from io import BytesIO
+
+
+if sys.version_info[:2] == (2, 6):  # pragma: no cover
+    def float_to_decimal(fl):
+        return decimal.Decimal(str(fl))
 else:  # pragma: no cover
-    import io
+    def float_to_decimal(fl):
+        return decimal.Decimal(fl)
 
-if sys.version_info[0:2] < (3, 3):  # pragma: no cover
-    import mock
-else:  # pragma: no cover
-    from unittest import mock
 
+try:  # pragma: no cover
+    # Python >= 3.2
+    UTC = datetime.timezone.utc
+except AttributeError:  # pragma: no cover
+    try:
+        # Fallback to pytz
+        from pytz import UTC
+    except ImportError:
+
+        # Ok, let's write our own.
+        class _UTC(datetime.tzinfo):
+            """The UTC tzinfo."""
+
+            def utcoffset(self, dt):
+                return datetime.timedelta(0)
+
+            def tzname(self, dt):
+                return "UTC"
+
+            def dst(self, dt):
+                return datetime.timedelta(0)
+
+            def localize(self, dt):
+                dt.astimezone(self)
+
+        UTC = _UTC()

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2011-2013 Raphaël Barrois
+# Copyright (c) 2013 Romain Commandé
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,21 +19,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-"""Helper to test circular factory dependencies."""
 
-import factory
+"""Helpers for testing SQLAlchemy apps."""
 
-from . import bar as bar_mod
+from sqlalchemy import Column, Integer, Unicode, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import scoped_session, sessionmaker
 
-class Foo(object):
-    def __init__(self, bar, x):
-        self.bar = bar
-        self.x = x
+session = scoped_session(sessionmaker())
+engine = create_engine('sqlite://')
+session.configure(bind=engine)
+Base = declarative_base()
 
 
-class FooFactory(factory.Factory):
-    class Meta:
-        model = Foo
+class StandardModel(Base):
+    __tablename__ = 'StandardModelTable'
 
-    x = 42
-    bar = factory.SubFactory(bar_mod.BarFactory)
+    id = Column(Integer(), primary_key=True)
+    foo = Column(Unicode(20))
+
+
+class NonIntegerPk(Base):
+    __tablename__ = 'NonIntegerPk'
+
+    id = Column(Unicode(20), primary_key=True)
+
+Base.metadata.create_all(engine)

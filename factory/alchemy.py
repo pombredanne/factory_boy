@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2011-2013 Raphaël Barrois
+# Copyright (c) 2013 Romain Commandé
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,22 +18,30 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+from __future__ import unicode_literals
+from sqlalchemy.sql.functions import max
 
-"""Helper to test circular factory dependencies."""
-
-import factory
-
-from . import bar as bar_mod
-
-class Foo(object):
-    def __init__(self, bar, x):
-        self.bar = bar
-        self.x = x
+from . import base
 
 
-class FooFactory(factory.Factory):
+class SQLAlchemyOptions(base.FactoryOptions):
+    def _build_default_options(self):
+        return super(SQLAlchemyOptions, self)._build_default_options() + [
+            base.OptionDefault('sqlalchemy_session', None, inherit=True),
+        ]
+
+
+class SQLAlchemyModelFactory(base.Factory):
+    """Factory for SQLAlchemy models. """
+
+    _options_class = SQLAlchemyOptions
     class Meta:
-        model = Foo
+        abstract = True
 
-    x = 42
-    bar = factory.SubFactory(bar_mod.BarFactory)
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        """Create an instance of the model, and save it to the database."""
+        session = cls._meta.sqlalchemy_session
+        obj = model_class(*args, **kwargs)
+        session.add(obj)
+        return obj

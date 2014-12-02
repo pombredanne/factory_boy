@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2010 Mark Sandstrom
-# Copyright (c) 2011 Raphaël Barrois
+# Copyright (c) 2011-2013 Raphaël Barrois
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+from __future__ import unicode_literals
+
+
+import itertools
 
 from factory import utils
 
-from .compat import unittest
+from .compat import is_python2, unittest
 
 
 class ExtractDictTestCase(unittest.TestCase):
@@ -230,3 +234,154 @@ class ImportObjectTestCase(unittest.TestCase):
     def test_invalid_module(self):
         self.assertRaises(ImportError, utils.import_object,
             'this-is-an-invalid-module', '__name__')
+
+
+class LogPPrintTestCase(unittest.TestCase):
+    def test_nothing(self):
+        txt = utils.log_pprint()
+        self.assertEqual('', txt)
+
+    def test_only_args(self):
+        txt = utils.log_pprint((1, 2, 3))
+        self.assertEqual('1, 2, 3', txt)
+
+    def test_only_kwargs(self):
+        txt = utils.log_pprint(kwargs={'a': 1, 'b': 2})
+        self.assertIn(txt, ['a=1, b=2', 'b=2, a=1'])
+
+    def test_bytes_args(self):
+        txt = utils.log_pprint((b'\xe1\xe2',))
+        expected = "b'\\xe1\\xe2'"
+        if is_python2:
+            expected = expected.lstrip('b')
+        self.assertEqual(expected, txt)
+
+    def test_text_args(self):
+        txt = utils.log_pprint(('ŧêßŧ',))
+        expected = "'ŧêßŧ'"
+        if is_python2:
+            expected = "u'\\u0167\\xea\\xdf\\u0167'"
+        self.assertEqual(expected, txt)
+
+    def test_bytes_kwargs(self):
+        txt = utils.log_pprint(kwargs={'x': b'\xe1\xe2', 'y': b'\xe2\xe1'})
+        expected1 = "x=b'\\xe1\\xe2', y=b'\\xe2\\xe1'"
+        expected2 = "y=b'\\xe2\\xe1', x=b'\\xe1\\xe2'"
+        if is_python2:
+            expected1 = expected1.replace('b', '')
+            expected2 = expected2.replace('b', '')
+        self.assertIn(txt, (expected1, expected2))
+
+    def test_text_kwargs(self):
+        txt = utils.log_pprint(kwargs={'x': 'ŧêßŧ', 'y': 'ŧßêŧ'})
+        expected1 = "x='ŧêßŧ', y='ŧßêŧ'"
+        expected2 = "y='ŧßêŧ', x='ŧêßŧ'"
+        if is_python2:
+            expected1 = "x=u'\\u0167\\xea\\xdf\\u0167', y=u'\\u0167\\xdf\\xea\\u0167'"
+            expected2 = "y=u'\\u0167\\xdf\\xea\\u0167', x=u'\\u0167\\xea\\xdf\\u0167'"
+        self.assertIn(txt, (expected1, expected2))
+
+
+class ResetableIteratorTestCase(unittest.TestCase):
+    def test_no_reset(self):
+        i = utils.ResetableIterator([1, 2, 3])
+        self.assertEqual([1, 2, 3], list(i))
+
+    def test_no_reset_new_iterator(self):
+        i = utils.ResetableIterator([1, 2, 3])
+        iterator = iter(i)
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+
+        iterator2 = iter(i)
+        self.assertEqual(3, next(iterator2))
+
+    def test_infinite(self):
+        i = utils.ResetableIterator(itertools.cycle([1, 2, 3]))
+        iterator = iter(i)
+        values = [next(iterator) for _i in range(10)]
+        self.assertEqual([1, 2, 3, 1, 2, 3, 1, 2, 3, 1], values)
+
+    def test_reset_simple(self):
+        i = utils.ResetableIterator([1, 2, 3])
+        iterator = iter(i)
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+
+        i.reset()
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+        self.assertEqual(3, next(iterator))
+
+    def test_reset_at_begin(self):
+        i = utils.ResetableIterator([1, 2, 3])
+        iterator = iter(i)
+        i.reset()
+        i.reset()
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+        self.assertEqual(3, next(iterator))
+
+    def test_reset_at_end(self):
+        i = utils.ResetableIterator([1, 2, 3])
+        iterator = iter(i)
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+        self.assertEqual(3, next(iterator))
+
+        i.reset()
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+        self.assertEqual(3, next(iterator))
+
+    def test_reset_after_end(self):
+        i = utils.ResetableIterator([1, 2, 3])
+        iterator = iter(i)
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+        self.assertEqual(3, next(iterator))
+        self.assertRaises(StopIteration, next, iterator)
+
+        i.reset()
+        # Previous iter() has stopped
+        iterator = iter(i)
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+        self.assertEqual(3, next(iterator))
+
+    def test_reset_twice(self):
+        i = utils.ResetableIterator([1, 2, 3, 4, 5])
+        iterator = iter(i)
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+
+        i.reset()
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+        self.assertEqual(3, next(iterator))
+        self.assertEqual(4, next(iterator))
+
+        i.reset()
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+        self.assertEqual(3, next(iterator))
+        self.assertEqual(4, next(iterator))
+
+    def test_reset_shorter(self):
+        i = utils.ResetableIterator([1, 2, 3, 4, 5])
+        iterator = iter(i)
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+        self.assertEqual(3, next(iterator))
+        self.assertEqual(4, next(iterator))
+
+        i.reset()
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+
+        i.reset()
+        self.assertEqual(1, next(iterator))
+        self.assertEqual(2, next(iterator))
+        self.assertEqual(3, next(iterator))
+        self.assertEqual(4, next(iterator))
+

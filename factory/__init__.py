@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2010 Mark Sandstrom
-# Copyright (c) 2011 Raphaël Barrois
+# Copyright (c) 2011-2013 Raphaël Barrois
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +20,47 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-__version__ = '1.2.0'
+__version__ = '2.4.1'
 __author__ = 'Raphaël Barrois <raphael.barrois+fboy@polytechnique.org>'
+
 
 from .base import (
     Factory,
+    BaseDictFactory,
+    DictFactory,
+    BaseListFactory,
+    ListFactory,
     StubFactory,
-    DjangoModelFactory,
+
+    FactoryError,
+
+    BUILD_STRATEGY,
+    CREATE_STRATEGY,
+    STUB_STRATEGY,
+    use_strategy,
+)
+
+# Backward compatibility; this should be removed soon.
+from .mogo import MogoFactory
+from .django import DjangoModelFactory
+
+from .declarations import (
+    LazyAttribute,
+    Iterator,
+    Sequence,
+    LazyAttributeSequence,
+    SelfAttribute,
+    ContainerAttribute,
+    SubFactory,
+    Dict,
+    List,
+    PostGeneration,
+    PostGenerationMethodCall,
+    RelatedFactory,
+)
+
+from .helpers import (
+    debug,
 
     build,
     create,
@@ -41,33 +75,8 @@ from .base import (
     generate_batch,
     simple_generate_batch,
 
-    BUILD_STRATEGY,
-    CREATE_STRATEGY,
-    STUB_STRATEGY,
-    use_strategy,
-
-    DJANGO_CREATION,
-    NAIVE_BUILD,
-    MOGO_BUILD,
-)
-
-from .declarations import (
-    LazyAttribute,
-    Iterator,
-    InfiniteIterator,
-    Sequence,
-    LazyAttributeSequence,
-    SelfAttribute,
-    ContainerAttribute,
-    SubFactory,
-    CircularSubFactory,
-    PostGeneration,
-    PostGenerationMethodCall,
-    RelatedFactory,
-
     lazy_attribute,
     iterator,
-    infinite_iterator,
     sequence,
     lazy_attribute_sequence,
     container_attribute,
